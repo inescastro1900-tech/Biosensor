@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Biosensor NFC</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+  <h1>Resultados do Biosensor</h1>
+
+  <h2>Concentração Atual:</h2>
+  <p id="valor">--</p>
+
+  <canvas id="grafico" width="400" height="200"></canvas>
+
+  <script>
+    const ctx = document.getElementById('grafico').getContext('2d');
+
+    const chart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: [],
+        datasets: [{
+          label: 'Concentração',
+          data: []
+        }]
+      }
+    });
+
+    async function buscarDados() {
+      const response = await fetch("https://teuprojeto.firebaseio.com/devices/biosensor_01.json");
+      const data = await response.json();
+
+      document.getElementById("valor").innerText = data.concentration;
+
+      chart.data.labels.push(new Date().toLocaleTimeString());
+      chart.data.datasets[0].data.push(data.concentration);
+      chart.update();
+    }
+
+    setInterval(buscarDados, 5000);
+  </script>
+
+</body>
+</html>
