@@ -3,62 +3,100 @@
 <head>
   <meta charset="UTF-8">
   <title>Dashboard Biosensor</title>
+  <link rel="stylesheet" href="style.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
 
-  <h1 id="deviceName">Dispositivo</h1>
+<div class="container">
 
-  <h2>Estado: <span id="estado">--</span></h2>
-  <h3>Concentração atual: <span id="valor">--</span></h3>
+  <div class="card">
+    <h1 id="deviceName">Dispositivo</h1>
+    <p class="status">Estado: <span id="estado">--</span></p>
+    <p>Última medição:</p>
+    <div class="valor" id="valor">--</div>
+  </div>
 
-  <canvas id="grafico" width="400" height="200"></canvas>
+  <div class="card">
+    <canvas id="grafico"></canvas>
+  </div>
 
-  <script>
+  <div class="card">
+    <button onclick="exportCSV()">Exportar CSV</button>
+  </div>
 
-    const params = new URLSearchParams(window.location.search);
-    const deviceId = params.get("id");
+</div>
 
-    document.getElementById("deviceName").innerText = deviceId;
+<script>
+  const params = new URLSearchParams(window.location.search);
+  const deviceId = params.get("id");
 
-    const ctx = document.getElementById('grafico').getContext('2d');
+  document.getElementById("deviceName").innerText = deviceId;
 
-    const chart = new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: [],
-        datasets: [{
-          label: 'Concentração',
-          data: []
-        }]
-      }
-    });
+  const ctx = document.getElementById('grafico').getContext('2d');
 
-    async function buscarDados() {
+  const chart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: [],
+      datasets: [{
+        label: 'Concentração (mg/L)',
+        data: [],
+        borderWidth: 2,
+        fill: false
+      }]
+    }
+  });
 
-      const response = await fetch(
-        `https://biosensor-platform-default-rtdb.europe-west1.firebasedatabase.app/devices/${deviceId}.json`
-      );
+  let readings = [];
 
-      const data = await response.json();
+  async function buscarDados() {
 
-      document.getElementById("valor").innerText = data.concentration;
+    const response = await fetch(
+      `https://biosensor-platform-default-rtdb.europe-west1.firebasedatabase.app/devices/${deviceId}.json`
+    );
 
-      // Estado automático
-      if (data.concentration > 10) {
-        document.getElementById("estado").innerText = "🔴 ALERTA";
-      } else {
-        document.getElementById("estado").innerText = "🟢 NORMAL";
-      }
+    const data = await response.json();
 
-      chart.data.labels.push(new Date().toLocaleTimeString());
-      chart.data.datasets[0].data.push(data.concentration);
-      chart.update();
+    document.getElementById("valor").innerText = data.concentration + " mg/L";
+
+    // Estado automático
+    if (data.concentration > 10) {
+      document.getElementById("estado").innerText = "🔴 ALERTA";
+      document.getElementById("estado").className = "alerta";
+    } else {
+      document.getElementById("estado").innerText = "🟢 NORMAL";
+      document.getElementById("estado").className = "normal";
     }
 
-    setInterval(buscarDados, 5000);
+    chart.data.labels.push(new Date().toLocaleTimeString());
+    chart.data.datasets[0].data.push(data.concentration);
+    chart.update();
 
-  </script>
+    readings.push({
+      timestamp: Date.now(),
+      concentration: data.concentration
+    });
+  }
+
+  function exportCSV() {
+    let csv = "timestamp,concentration\n";
+    readings.forEach(r => {
+      csv += `${r.timestamp},${r.concentration}\n`;
+    });
+
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "dados_biosensor.csv";
+    a.click();
+  }
+
+  setInterval(buscarDados, 5000);
+
+</script>
 
 </body>
 </html>
