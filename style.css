@@ -2,7 +2,7 @@ body {
   font-family: Arial, sans-serif;
   background-color: #f4f7fb;
   margin: 0;
-  padding: 30px;
+  padding: 20px;
 }
 
 .container {
@@ -13,19 +13,20 @@ body {
 .card {
   background: white;
   padding: 20px;
-  border-radius: 12px;
+  border-radius: 16px;
   box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-  margin-bottom: 25px;
+  margin-bottom: 20px;
 }
 
 h1 {
   margin: 0;
   color: #1f3c88;
+  font-size: 22px;
 }
 
 .status {
   font-weight: bold;
-  font-size: 18px;
+  font-size: 16px;
 }
 
 .normal {
@@ -37,20 +38,44 @@ h1 {
 }
 
 .valor {
-  font-size: 32px;
+  font-size: 28px;
   font-weight: bold;
   color: #333;
+  margin-top: 5px;
 }
 
 button {
-  padding: 10px 18px;
+  width: 100%;
+  padding: 14px;
   background-color: #1f3c88;
   color: white;
   border: none;
-  border-radius: 8px;
+  border-radius: 10px;
+  font-size: 16px;
   cursor: pointer;
 }
 
 button:hover {
   background-color: #16306d;
+}
+
+/* 📱 Ajustes específicos para telemóvel */
+@media (max-width: 600px) {
+
+  body {
+    padding: 15px;
+  }
+
+  .card {
+    padding: 15px;
+  }
+
+  h1 {
+    font-size: 20px;
+  }
+
+  .valor {
+    font-size: 24px;
+  }
+
 }
