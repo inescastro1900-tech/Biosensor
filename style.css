@@ -102,12 +102,13 @@ body.login-page {
   background: linear-gradient(135deg, #e8f0ff, #f4f7fb);
 }
 
-.login-card {
-  max-width: 400px;
+.login-card input {
   width: 100%;
-  padding: 30px;
-  border-radius: 20px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+  padding: 12px;
+  margin-bottom: 18px;  /* aumentei aqui */
+  border-radius: 10px;
+  border: 1px solid #ddd;
+  font-size: 14px;
 }
 
 .login-card h2 {
@@ -129,6 +130,10 @@ body.login-page {
   border-color: #1f3c88;
 }
 
+.login-card button {
+  margin-top: 10px;
+}
+
 .login-link {
   margin-top: 10px;
   font-size: 14px;
@@ -139,3 +144,4 @@ body.login-page {
 .login-link:hover {
   text-decoration: underline;
 }
+
