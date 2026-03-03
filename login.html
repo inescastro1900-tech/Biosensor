@@ -27,11 +27,14 @@
   import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
   const firebaseConfig = {
-    apiKey: "COLOCA_AQUI",
-    authDomain: "COLOCA_AQUI",
-    databaseURL: "COLOCA_AQUI",
-    projectId: "COLOCA_AQUI",
-  };
+  apiKey: "AIzaSyB34LNKG3wHKhr6knHKLOiJdbNIjH6aQLI",
+  authDomain: "biosensor-platform.firebaseapp.com",
+  databaseURL: "https://biosensor-platform-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "biosensor-platform",
+  storageBucket: "biosensor-platform.firebasestorage.app",
+  messagingSenderId: "603962738518",
+  appId: "1:603962738518:web:182bb93979a211d66938f7"
+};
 
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
