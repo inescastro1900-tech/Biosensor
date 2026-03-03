@@ -145,4 +145,12 @@ body.login-page {
   text-decoration: underline;
 }
 
+/* Espaçamento específico para botões do login */
+.login-card button {
+  margin-top: 15px;
+}
+
+.login-card button + button {
+  margin-top: 10px;
+}
 
