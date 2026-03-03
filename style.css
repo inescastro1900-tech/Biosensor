@@ -91,3 +91,51 @@ button:hover {
     height: 250px;
   }
 }
+
+/* ===== LOGIN PAGE ===== */
+
+body.login-page {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background: linear-gradient(135deg, #e8f0ff, #f4f7fb);
+}
+
+.login-card {
+  max-width: 400px;
+  width: 100%;
+  padding: 30px;
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+}
+
+.login-card h2 {
+  margin-bottom: 20px;
+  color: #1f3c88;
+}
+
+.login-card input {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 12px;
+  border-radius: 10px;
+  border: 1px solid #ddd;
+  font-size: 14px;
+}
+
+.login-card input:focus {
+  outline: none;
+  border-color: #1f3c88;
+}
+
+.login-link {
+  margin-top: 10px;
+  font-size: 14px;
+  color: #1f3c88;
+  cursor: pointer;
+}
+
+.login-link:hover {
+  text-decoration: underline;
+}
