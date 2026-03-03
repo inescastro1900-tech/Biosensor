@@ -71,7 +71,7 @@
     } else {
       createUserWithEmailAndPassword(auth, email, password)
         .then(() => {
-          window.location.href = "index.html";
+          window.location.href = "device.html?id=biosensor_01";
         })
         .catch(error => {
           document.getElementById("erro").innerText = error.message;
