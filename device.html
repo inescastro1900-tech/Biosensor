@@ -27,7 +27,13 @@
   <div class="card">
     <button onclick="exportCSV()">Exportar CSV</button>
   </div>
-
+  
+  <div class="card">
+    <button onclick="startMeasurement()">▶ Iniciar Medição</button>
+    <button onclick="stopMeasurement()">⏹ Parar Medição</button>
+    <button onclick="logout()">🔓 Logout</button>
+  </div>
+  
 </div>
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
@@ -124,11 +130,40 @@
   }
 
   setInterval(buscarDados, 5000);
+  function logout() {
+    window.location.href = "login.html";
+  }
 
+  async function startMeasurement() {
+  
+    await fetch(
+      `https://biosensor-platform-default-rtdb.europe-west1.firebasedatabase.app/devices/${deviceId}/command.json`,
+      {
+        method: "PUT",
+        body: JSON.stringify("start")
+      }
+    );
+  
+    alert("Medição iniciada");
+  }
+  
+  async function stopMeasurement() {
+  
+    await fetch(
+      `https://biosensor-platform-default-rtdb.europe-west1.firebasedatabase.app/devices/${deviceId}/command.json`,
+      {
+        method: "PUT",
+        body: JSON.stringify("stop")
+      }
+    );
+  
+    alert("Medição parada");
+  }
 </script>
 
 </body>
 </html>
+
 
 
 
