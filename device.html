@@ -34,12 +34,14 @@
     <button onclick="startMeasurement()">▶ Iniciar Medição</button>
     <button onclick="stopMeasurement()">⏹ Parar Medição</button>
     <button onclick="logout()">🔓 Logout</button>
-    <button onclick="connectBLE()">🔵 Ligar ao Sensor (Bluetooth)</button>
+
+    <!-- BLE BUTTON -->
+    <button id="bleBtn">🔵 Ligar ao Sensor (Bluetooth)</button>
   </div>
 
 </div>
 
-<!-- Firebase Auth -->
+<!-- ================= FIREBASE AUTH ================= -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
   import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
@@ -64,12 +66,12 @@
   });
 </script>
 
-<!-- DASHBOARD + BLE -->
+<!-- ================= DASHBOARD + BLE ================= -->
 <script>
 const params = new URLSearchParams(window.location.search);
 const deviceId = params.get("id");
 
-document.getElementById("deviceName").innerText = deviceId;
+document.getElementById("deviceName").innerText = deviceId || "Dispositivo";
 
 const ctx = document.getElementById('grafico').getContext('2d');
 
@@ -92,9 +94,7 @@ const chart = new Chart(ctx, {
 
 let readings = [];
 
-/* =========================
-   FIREBASE FETCH (histórico)
-========================= */
+/* ================= FIREBASE FETCH ================= */
 async function buscarDados() {
 
   const response = await fetch(
@@ -127,9 +127,7 @@ async function buscarDados() {
 
 setInterval(buscarDados, 5000);
 
-/* =========================
-   CSV EXPORT
-========================= */
+/* ================= CSV EXPORT ================= */
 function exportCSV() {
   let csv = "timestamp,concentration\n";
 
@@ -146,16 +144,12 @@ function exportCSV() {
   a.click();
 }
 
-/* =========================
-   LOGOUT
-========================= */
+/* ================= LOGOUT ================= */
 function logout() {
   window.location.href = "login.html";
 }
 
-/* =========================
-   START / STOP (Firebase cmd)
-========================= */
+/* ================= FIREBASE COMMANDS ================= */
 async function startMeasurement() {
   await fetch(
     `https://biosensor-platform-default-rtdb.europe-west1.firebasedatabase.app/devices/${deviceId}/command.json`,
@@ -180,40 +174,44 @@ async function stopMeasurement() {
   alert("Medição parada");
 }
 
-/* =========================
-   BLE (CORRIGIDO)
-========================= */
+/* ================= BLE ================= */
 let bleCharacteristic;
 
-window.connectBLE = async function () {
-  try {
-    alert("A iniciar ligação BLE...");
+document.addEventListener("DOMContentLoaded", () => {
 
-    const device = await navigator.bluetooth.requestDevice({
-      acceptAllDevices: true,
-      optionalServices: ['180c']
-    });
+  document.getElementById("bleBtn").addEventListener("click", async () => {
 
-    const server = await device.gatt.connect();
-    const service = await server.getPrimaryService('180c');
-    bleCharacteristic = await service.getCharacteristic('2a56');
+    try {
+      alert("A abrir Bluetooth...");
 
-    await bleCharacteristic.startNotifications();
+      const device = await navigator.bluetooth.requestDevice({
+        acceptAllDevices: true,
+        optionalServices: ['180c']
+      });
 
-    bleCharacteristic.addEventListener(
-      'characteristicvaluechanged',
-      handleBLEData
-    );
+      const server = await device.gatt.connect();
+      const service = await server.getPrimaryService('180c');
+      bleCharacteristic = await service.getCharacteristic('2a56');
 
-    alert("Ligado ao biossensor!");
+      await bleCharacteristic.startNotifications();
 
-  } catch (error) {
-    console.error(error);
-    alert("Erro BLE: " + error);
-  }
-};
+      bleCharacteristic.addEventListener(
+        'characteristicvaluechanged',
+        handleBLEData
+      );
 
-window.handleBLEData = function (event) {
+      alert("Ligado ao biossensor!");
+
+    } catch (error) {
+      console.error(error);
+      alert("Erro BLE: " + error);
+    }
+  });
+
+});
+
+/* ================= BLE DATA ================= */
+function handleBLEData(event) {
 
   const value = new TextDecoder().decode(event.target.value);
   const concentracao = parseFloat(value);
@@ -232,7 +230,7 @@ window.handleBLEData = function (event) {
       })
     }
   );
-};
+}
 
 </script>
 
