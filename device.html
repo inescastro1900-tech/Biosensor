@@ -187,7 +187,7 @@
       alert("Erro BLE: " + error);
     }
   };
-  function handleBLEData(event) {
+  window.handleBLEData = function () {
     const value = new TextDecoder().decode(event.target.value);
   
     const concentracao = parseFloat(value);
