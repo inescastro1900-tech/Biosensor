@@ -32,6 +32,7 @@
     <button onclick="startMeasurement()">▶ Iniciar Medição</button>
     <button onclick="stopMeasurement()">⏹ Parar Medição</button>
     <button onclick="logout()">🔓 Logout</button>
+    <button onclick="connectBLE()">🔵 Ligar ao Sensor (Bluetooth)</button>
   </div>
   
 </div>
@@ -159,6 +160,55 @@
   
     alert("Medição parada");
   }
+  <script>
+  let bleCharacteristic;
+  
+  async function connectBLE() {
+    try {
+      const device = await navigator.bluetooth.requestDevice({
+        acceptAllDevices: true,
+        optionalServices: ['180c']
+      });
+  
+      const server = await device.gatt.connect();
+      const service = await server.getPrimaryService('180c');
+      bleCharacteristic = await service.getCharacteristic('2a56');
+  
+      await bleCharacteristic.startNotifications();
+  
+      bleCharacteristic.addEventListener(
+        'characteristicvaluechanged',
+        handleBLEData
+      );
+  
+      alert("Ligado ao biossensor!");
+  
+    } catch (error) {
+      console.error(error);
+      alert("Erro ao ligar BLE");
+    }
+  }
+  function handleBLEData(event) {
+    const value = new TextDecoder().decode(event.target.value);
+  
+    const concentracao = parseFloat(value);
+  
+    // atualizar UI imediatamente
+    document.getElementById("valor").innerText = concentracao + " mg/L";
+  
+    // enviar para Firebase
+    fetch(
+      `https://biosensor-platform-default-rtdb.europe-west1.firebasedatabase.app/devices/${deviceId}.json`,
+      {
+        method: "PATCH",
+        body: JSON.stringify({
+          concentration: concentracao,
+          timestamp: Date.now()
+        })
+      }
+    );
+  }
+</script>
 </script>
 
 </body>
