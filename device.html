@@ -186,11 +186,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const device = await navigator.bluetooth.requestDevice({
         acceptAllDevices: true
+        optionalServices: ['12345678-1234-1234-1234-1234567890ab']
       });
 
       const server = await device.gatt.connect();
-      const service = await server.getPrimaryService('180c');
-      bleCharacteristic = await service.getCharacteristic('2a56');
+      const service = await server.getPrimaryService('12345678-1234-1234-1234-1234567890ab');
+      bleCharacteristic = await service.getCharacteristic('abcd1234-5678-1234-5678-1234567890ab');
 
       await bleCharacteristic.startNotifications();
 
