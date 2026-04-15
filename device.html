@@ -163,7 +163,7 @@
   <script>
   let bleCharacteristic;
   
-  async function connectBLE() {
+  window.connectBLE = async function () {
     try {
       const device = await navigator.bluetooth.requestDevice({
         acceptAllDevices: true,
@@ -175,7 +175,6 @@
       bleCharacteristic = await service.getCharacteristic('2a56');
   
       await bleCharacteristic.startNotifications();
-  
       bleCharacteristic.addEventListener(
         'characteristicvaluechanged',
         handleBLEData
@@ -185,9 +184,9 @@
   
     } catch (error) {
       console.error(error);
-      alert("Erro ao ligar BLE");
+      alert("Erro BLE: " + error);
     }
-  }
+  };
   function handleBLEData(event) {
     const value = new TextDecoder().decode(event.target.value);
   
