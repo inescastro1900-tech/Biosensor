@@ -185,7 +185,7 @@ document.addEventListener("DOMContentLoaded", () => {
       alert("A abrir Bluetooth...");
 
       const device = await navigator.bluetooth.requestDevice({
-        acceptAllDevices: true,
+        filters: [{ name: "BiosensorNano" }],
         optionalServices: ['12345678-1234-1234-1234-1234567890ab']
       });
 
