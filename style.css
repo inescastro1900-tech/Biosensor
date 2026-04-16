@@ -153,7 +153,41 @@ body.login-page {
 }
 
 
+/* Grupo de botões lado a lado */
+.button-group {
+  display: flex;
+  gap: 10px;
+}
 
+.button-group button {
+  flex: 1; /* Faz os botões terem o mesmo tamanho */
+}
+
+/* Cores específicas para os estados */
+.btn-start {
+  background-color: #2ecc71 !important; /* Verde */
+}
+
+.btn-start:hover {
+  background-color: #27ae60 !important;
+}
+
+.btn-stop {
+  background-color: #e74c3c !important; /* Vermelho */
+}
+
+.btn-stop:hover {
+  background-color: #c0392b !important;
+}
+
+/* Ajuste do botão Bluetooth */
+#bleBtn {
+  background-color: #3498db;
+}
+
+#bleBtn:hover {
+  background-color: #2980b9;
+}
 
 
 
