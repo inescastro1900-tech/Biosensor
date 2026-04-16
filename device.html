@@ -150,29 +150,41 @@ function logout() {
 }
 
 /* ================= FIREBASE COMMANDS ================= */
-async function startMeasurement() {
-  await fetch(
-    `https://biosensor-platform-default-rtdb.europe-west1.firebasedatabase.app/devices/${deviceId}/command.json`,
-    {
-      method: "PUT",
-      body: JSON.stringify("start")
-    }
-  );
+/* ================= COMANDOS VIA BLE (SEM WIFI) ================= */
 
-  alert("Medição iniciada");
+async function startMeasurement() {
+  if (bleCharacteristic) {
+    try {
+      // Enviamos "1" para ligar o LED
+      const encoder = new TextEncoder();
+      await bleCharacteristic.writeValue(encoder.encode("1"));
+      console.log("Comando START enviado via BLE");
+      alert("Medição iniciada (LED ON)");
+    } catch (error) {
+      console.error("Erro ao enviar START:", error);
+    }
+  } else {
+    alert("Primeiro ligue o Bluetooth!");
+  }
 }
 
 async function stopMeasurement() {
-  await fetch(
-    `https://biosensor-platform-default-rtdb.europe-west1.firebasedatabase.app/devices/${deviceId}/command.json`,
-    {
-      method: "PUT",
-      body: JSON.stringify("stop")
+  if (bleCharacteristic) {
+    try {
+      // Enviamos "0" para desligar o LED
+      const encoder = new TextEncoder();
+      await bleCharacteristic.writeValue(encoder.encode("0"));
+      console.log("Comando STOP enviado via BLE");
+      alert("Medição parada (LED OFF)");
+    } catch (error) {
+      console.error("Erro ao enviar STOP:", error);
     }
-  );
-
-  alert("Medição parada");
+  } else {
+    alert("Primeiro ligue o Bluetooth!");
+  }
 }
+
+
 
 /* ================= BLE ================= */
 let bleCharacteristic;
