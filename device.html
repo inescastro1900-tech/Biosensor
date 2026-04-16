@@ -18,6 +18,13 @@
     <p class="status">Estado: <span id="estado">--</span></p>
     <p>Última medição:</p>
     <div class="valor" id="valor">--</div>
+    
+    <button id="bleBtn" style="margin-top: 20px;">🔵 Ligar ao Sensor (Bluetooth)</button>
+    
+    <div class="button-group" style="margin-top: 15px;">
+      <button onclick="startMeasurement()" class="btn-start">▶ Iniciar Medição</button>
+      <button onclick="stopMeasurement()" class="btn-stop">⏹ Parar Medição</button>
+    </div>
   </div>
 
   <div class="card">
@@ -27,16 +34,8 @@
   </div>
 
   <div class="card">
-    <button onclick="exportCSV()">Exportar CSV</button>
-  </div>
-
-  <div class="card">
-    <button onclick="startMeasurement()">▶ Iniciar Medição</button>
-    <button onclick="stopMeasurement()">⏹ Parar Medição</button>
-    <button onclick="logout()">🔓 Logout</button>
-
-    <!-- BLE BUTTON -->
-    <button id="bleBtn">🔵 Ligar ao Sensor (Bluetooth)</button>
+    <button onclick="exportCSV()" style="margin-bottom: 10px; background-color: #27ae60;">📥 Exportar CSV</button>
+    <button onclick="logout()" style="background-color: #7f8c8d;">🔓 Logout</button>
   </div>
 
 </div>
