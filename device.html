@@ -62,7 +62,6 @@
 </script>
 
 <script>
-let lastFirebaseUpdate = 0;
 const params = new URLSearchParams(window.location.search);
 const deviceId = params.get("id") || "biosensor_01";
 
@@ -77,7 +76,7 @@ const chart = new Chart(ctx, {
       data: [],
       borderColor: '#1f3c88',
       borderWidth: 2,
-      pointRadius: 0,
+      pointRadius: 1,
       fill: false,
       tension: 0
     }]
@@ -140,7 +139,7 @@ function handleBLEData(event) {
     chart.data.labels.shift();
     chart.data.datasets[0].data.shift();
   }
-  chart.update('none'); 
+  chart.update(); 
 
   // Guardar para CSV
   readings.push({ timestamp: new Date().toISOString(), concentration: concentracao });
