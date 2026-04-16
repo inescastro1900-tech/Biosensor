@@ -76,11 +76,24 @@ const chart = new Chart(ctx, {
       data: [],
       borderColor: '#1f3c88',
       borderWidth: 2,
+      pointRadius: 0, // Remove as bolinhas para ganhar performance
       fill: false,
-      tension: 0.1
+      tension: 0.1 // Suavização da linha
     }]
   },
-  options: { responsive: true, maintainAspectRatio: false }
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    animation: false, // DESATIVA animações para atualizar instantaneamente
+    parsing: false,   // Melhora performance em tempo real
+    spanGaps: true,
+    scales: {
+      x: {
+        display: true,
+        ticks: { maxRotation: 0, autoSkip: true, maxTicksLimit: 10 }
+      }
+    }
+  }
 });
 
 let readings = [];
@@ -117,9 +130,24 @@ function handleBLEData(event) {
   const concentracao = parseFloat(value);
   if (isNaN(concentracao)) return;
 
-  atualizarInterface(concentracao);
+  // Atualiza o valor no ecrã
+  document.getElementById("valor").innerText = concentracao.toFixed(2) + " mg/L";
   
-  // Opcional: Salvar no Firebase para histórico
+  // Adiciona ao gráfico
+  const agora = new Date().toLocaleTimeString();
+  chart.data.labels.push(agora);
+  chart.data.datasets[0].data.push(concentracao);
+
+  // Mantém os últimos 50 pontos para o gráfico não ficar pesado com o tempo
+  if (chart.data.labels.length > 50) {
+    chart.data.labels.shift();
+    chart.data.datasets[0].data.shift();
+  }
+
+  // O segredo está aqui: 'none' desativa o motor de animação no refresh
+  chart.update('none'); 
+
+  // Salva no Firebase (podemos fazer isto com menos frequência se quiseres poupar dados)
   salvarNoFirebase(concentracao);
 }
 
