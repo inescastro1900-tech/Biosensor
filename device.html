@@ -176,62 +176,72 @@ async function stopMeasurement() {
 
 /* ================= BLE ================= */
 let bleCharacteristic;
+const SERVICE_UUID = '12345678-1234-1234-1234-1234567890ab';
+const CHARACTERISTIC_UUID = 'abcd1234-5678-1234-5678-1234567890ab';
 
 document.addEventListener("DOMContentLoaded", () => {
-
   document.getElementById("bleBtn").addEventListener("click", async () => {
-
     try {
-      alert("A abrir Bluetooth...");
-
+      // 1. Mudamos o filtro para aceitar o nome ou o serviço
       const device = await navigator.bluetooth.requestDevice({
-        filters: [{ services: ['12345678-1234-1234-1234-1234567890ab'] }],
-        optionalServices: ['12345678-1234-1234-1234-1234567890ab']
+        filters: [
+          { name: "BiosensorNano" },
+          { services: [SERVICE_UUID] }
+        ]
       });
 
+      console.log("Conectando ao servidor GATT...");
       const server = await device.gatt.connect();
-      const service = await server.getPrimaryService('12345678-1234-1234-1234-1234567890ab');
-      bleCharacteristic = await service.getCharacteristic('abcd1234-5678-1234-5678-1234567890ab');
 
+      console.log("Obtendo serviço...");
+      const service = await server.getPrimaryService(SERVICE_UUID);
+
+      console.log("Obtendo característica...");
+      bleCharacteristic = await service.getCharacteristic(CHARACTERISTIC_UUID);
+
+      // 2. Iniciar notificações
       await bleCharacteristic.startNotifications();
+      bleCharacteristic.addEventListener('characteristicvaluechanged', handleBLEData);
 
-      bleCharacteristic.addEventListener(
-        'characteristicvaluechanged',
-        handleBLEData
-      );
-
-      alert("Ligado ao biossensor!");
+      document.getElementById("estado").innerText = "🔵 CONECTADO (BLE)";
+      document.getElementById("estado").className = "normal";
+      alert("Ligado ao biossensor via Bluetooth!");
 
     } catch (error) {
-      console.error(error);
-      alert("Erro BLE: " + error);
+      console.error("Erro Bluetooth:", error);
+      alert("Erro BLE: " + error.message);
     }
   });
-
 });
 
-/* ================= BLE DATA ================= */
+/* ================= BLE DATA HANDLING ================= */
 function handleBLEData(event) {
-
   const value = new TextDecoder().decode(event.target.value);
   const concentracao = parseFloat(value);
 
   if (isNaN(concentracao)) return;
 
-  document.getElementById("valor").innerText = concentracao + " mg/L";
+  // Atualiza a UI imediatamente (sem esperar o Firebase)
+  document.getElementById("valor").innerText = concentracao.toFixed(2) + " mg/L";
+  
+  // Atualiza o Gráfico em tempo real
+  chart.data.labels.push(new Date().toLocaleTimeString());
+  chart.data.datasets[0].data.push(concentracao);
+  if (chart.data.labels.length > 20) { // Mantém apenas os últimos 20 pontos
+    chart.data.labels.shift();
+    chart.data.datasets[0].data.shift();
+  }
+  chart.update('none'); // 'none' para performance em atualizações rápidas
 
-  fetch(
-    `https://biosensor-platform-default-rtdb.europe-west1.firebasedatabase.app/devices/${deviceId}.json`,
-    {
-      method: "PATCH",
-      body: JSON.stringify({
-        concentration: concentracao,
-        timestamp: Date.now()
-      })
-    }
-  );
+  // Envia para o Firebase para histórico
+  fetch(`https://biosensor-platform-default-rtdb.europe-west1.firebasedatabase.app/devices/${deviceId}.json`, {
+    method: "PATCH",
+    body: JSON.stringify({
+      concentration: concentracao,
+      timestamp: Date.now()
+    })
+  }).catch(err => console.error("Erro ao salvar no Firebase:", err));
 }
-
 </script>
 
 </body>
