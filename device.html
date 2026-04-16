@@ -70,7 +70,10 @@
 const params = new URLSearchParams(window.location.search);
 const deviceId = params.get("id");
 
-document.getElementById("deviceName").innerText = deviceId || "Dispositivo";
+const deviceId = params.get("id");
+const nomeExibicao = (deviceId === "biosensor_01") ? "Sensor de Resorufina" : (deviceId || "Dispositivo");
+
+document.getElementById("deviceName").innerText = nomeExibicao;
 
 const ctx = document.getElementById('grafico').getContext('2d');
 
