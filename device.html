@@ -1,10 +1,9 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard Biosensor</title>
-
+  <title>Dashboard - Sensor de Resorufina</title>
   <link rel="stylesheet" href="style.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
@@ -14,21 +13,21 @@
 <div class="container">
 
   <div class="card">
-    <h1 id="deviceName">Dispositivo</h1>
-    <p class="status">Estado: <span id="estado">--</span></p>
+    <h1 id="deviceName">Sensor de Resorufina</h1>
+    <p class="status">Estado: <span id="estado">Aguardando Conexão</span></p>
     <p>Última medição:</p>
-    <div class="valor" id="valor">--</div>
+    <div class="valor" id="valor">-- mg/L</div>
     
-    <button id="bleBtn" style="margin-top: 20px;">🔵 Ligar ao Sensor (Bluetooth)</button>
+    <button id="bleBtn" style="margin-top: 20px; background-color: #3498db;">🔵 Ligar ao Sensor (Bluetooth)</button>
     
-    <div class="button-group" style="margin-top: 15px;">
-      <button onclick="startMeasurement()" class="btn-start">▶ Iniciar Medição</button>
-      <button onclick="stopMeasurement()" class="btn-stop">⏹ Parar Medição</button>
+    <div class="button-group" style="margin-top: 15px; display: flex; gap: 10px;">
+      <button onclick="startMeasurement()" id="btnStart" style="flex: 1; background-color: #2ecc71;">▶ Iniciar Medição</button>
+      <button onclick="stopMeasurement()" id="btnStop" style="flex: 1; background-color: #e74c3c;">⏹ Parar Medição</button>
     </div>
   </div>
 
   <div class="card">
-    <div class="chart-container">
+    <div class="chart-container" style="position: relative; height: 350px;">
       <canvas id="grafico"></canvas>
     </div>
   </div>
@@ -40,7 +39,6 @@
 
 </div>
 
-<!-- ================= FIREBASE AUTH ================= -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
   import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
@@ -59,24 +57,16 @@
   const auth = getAuth(app);
 
   onAuthStateChanged(auth, (user) => {
-    if (!user) {
-      window.location.href = "login.html";
-    }
+    if (!user) window.location.href = "login.html";
   });
 </script>
 
-<!-- ================= DASHBOARD + BLE ================= -->
 <script>
 const params = new URLSearchParams(window.location.search);
-const deviceId = params.get("id");
+const deviceId = params.get("id") || "biosensor_01";
 
-const deviceId = params.get("id");
-const nomeExibicao = (deviceId === "biosensor_01") ? "Sensor de Resorufina" : (deviceId || "Dispositivo");
-
-document.getElementById("deviceName").innerText = nomeExibicao;
-
+// Configuração do Gráfico
 const ctx = document.getElementById('grafico').getContext('2d');
-
 const chart = new Chart(ctx, {
   type: 'line',
   data: {
@@ -84,162 +74,111 @@ const chart = new Chart(ctx, {
     datasets: [{
       label: 'Concentração (mg/L)',
       data: [],
+      borderColor: '#1f3c88',
       borderWidth: 2,
-      fill: false
+      fill: false,
+      tension: 0.1
     }]
   },
-  options: {
-    responsive: true,
-    maintainAspectRatio: false
-  }
+  options: { responsive: true, maintainAspectRatio: false }
 });
 
 let readings = [];
-
-/* ================= FIREBASE FETCH ================= */
-async function buscarDados() {
-  // Se a medição estiver parada, não vamos buscar lixo ao Firebase
-  if (!isMeasuring) return; 
-
-  const response = await fetch(
-    `https://biosensor-platform-default-rtdb.europe-west1.firebasedatabase.app/devices/${deviceId}.json`
-  );
-
-  const data = await response.json();
-
-  if (!data || !data.concentration) return;
-
-  document.getElementById("valor").innerText = data.concentration + " mg/L";
-
-  if (data.concentration > 10) {
-    document.getElementById("estado").innerText = "🔴 ALERTA";
-    document.getElementById("estado").className = "alerta";
-  } else {
-    document.getElementById("estado").innerText = "🟢 NORMAL";
-    document.getElementById("estado").className = "normal";
-  }
-
-  chart.data.labels.push(new Date().toLocaleTimeString());
-  chart.data.datasets[0].data.push(data.concentration);
-  chart.update();
-
-  readings.push({
-    timestamp: Date.now(),
-    concentration: data.concentration
-  });
-}
-
-setInterval(buscarDados, 5000);
-
-/* ================= CSV EXPORT ================= */
-function exportCSV() {
-  let csv = "timestamp,concentration\n";
-
-  readings.forEach(r => {
-    csv += `${r.timestamp},${r.concentration}\n`;
-  });
-
-  const blob = new Blob([csv], { type: "text/csv" });
-  const url = URL.createObjectURL(blob);
-
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "dados_biosensor.csv";
-  a.click();
-}
-
-/* ================= LOGOUT ================= */
-function logout() {
-  window.location.href = "login.html";
-}
-
-/* ================= FIREBASE COMMANDS ================= */
-/* ================= COMANDOS VIA BLE (SEM WIFI) ================= */
-
-let isMeasuring = false; // Estado inicial
-
-async function startMeasurement() {
-  if (bleCharacteristic) {
-    const encoder = new TextEncoder();
-    await bleCharacteristic.writeValue(encoder.encode("1"));
-    isMeasuring = true; // Ativa a atualização do gráfico
-    document.getElementById("estado").innerText = "🔴 MEDINDO";
-    document.getElementById("estado").className = "alerta";
-  }
-}
-
-async function stopMeasurement() {
-  if (bleCharacteristic) {
-    const encoder = new TextEncoder();
-    await bleCharacteristic.writeValue(encoder.encode("0"));
-    isMeasuring = false; // Pausa a atualização do gráfico
-    document.getElementById("estado").innerText = "⏹ PARADO";
-    document.getElementById("estado").className = "normal";
-  }
-}
-
-
-
-/* ================= BLE ================= */
 let bleCharacteristic;
+let isMeasuring = false;
+
+/* ================= BLUETOOTH (BLE) ================= */
 const SERVICE_UUID = '12345678-1234-1234-1234-1234567890ab';
 const CHARACTERISTIC_UUID = 'abcd1234-5678-1234-5678-1234567890ab';
 
-document.addEventListener("DOMContentLoaded", () => {
-  document.getElementById("bleBtn").addEventListener("click", async () => {
-    try {
-      // 1. Mudamos o filtro para aceitar o nome ou o serviço
-      const device = await navigator.bluetooth.requestDevice({
-        filters: [
-          { name: "BiosensorNano" },
-          { services: [SERVICE_UUID] }
-        ]
-      });
+document.getElementById("bleBtn").addEventListener("click", async () => {
+  try {
+    const device = await navigator.bluetooth.requestDevice({
+      filters: [{ name: "BiosensorNano" }, { services: [SERVICE_UUID] }]
+    });
+    const server = await device.gatt.connect();
+    const service = await server.getPrimaryService(SERVICE_UUID);
+    bleCharacteristic = await service.getCharacteristic(CHARACTERISTIC_UUID);
+    
+    await bleCharacteristic.startNotifications();
+    bleCharacteristic.addEventListener('characteristicvaluechanged', handleBLEData);
 
-      console.log("Conectando ao servidor GATT...");
-      const server = await device.gatt.connect();
-
-      console.log("Obtendo serviço...");
-      const service = await server.getPrimaryService(SERVICE_UUID);
-
-      console.log("Obtendo característica...");
-      bleCharacteristic = await service.getCharacteristic(CHARACTERISTIC_UUID);
-
-      // 2. Iniciar notificações
-      await bleCharacteristic.startNotifications();
-      bleCharacteristic.addEventListener('characteristicvaluechanged', handleBLEData);
-
-      document.getElementById("estado").innerText = "🔵 CONECTADO (BLE)";
-      document.getElementById("estado").className = "normal";
-      alert("Ligado ao biossensor via Bluetooth!");
-
-    } catch (error) {
-      console.error("Erro Bluetooth:", error);
-      alert("Erro BLE: " + error.message);
-    }
-  });
+    document.getElementById("estado").innerText = "🔵 Bluetooth Conectado";
+    alert("Conectado ao Sensor de Resorufina!");
+  } catch (error) {
+    alert("Erro Bluetooth: " + error);
+  }
 });
 
-/* ================= BLE DATA HANDLING ================= */
 function handleBLEData(event) {
-  if (!isMeasuring) return; // Se estiver parado, ignora os dados!
+  if (!isMeasuring) return;
 
   const value = new TextDecoder().decode(event.target.value);
   const concentracao = parseFloat(value);
   if (isNaN(concentracao)) return;
 
-  document.getElementById("valor").innerText = concentracao.toFixed(2) + " mg/L";
+  atualizarInterface(concentracao);
+  
+  // Opcional: Salvar no Firebase para histórico
+  salvarNoFirebase(concentracao);
+}
 
-  // Atualiza o gráfico apenas se isMeasuring for true
+/* ================= FUNÇÕES DE CONTROLO ================= */
+async function startMeasurement() {
+  if (!bleCharacteristic) return alert("Conecte o Bluetooth primeiro!");
+  
+  const encoder = new TextEncoder();
+  await bleCharacteristic.writeValue(encoder.encode("1"));
+  
+  isMeasuring = true;
+  document.getElementById("estado").innerText = "🔴 A medir...";
+}
+
+async function stopMeasurement() {
+  if (!bleCharacteristic) return;
+  
+  const encoder = new TextEncoder();
+  await bleCharacteristic.writeValue(encoder.encode("0"));
+  
+  isMeasuring = false;
+  document.getElementById("estado").innerText = "⏹ Parado";
+}
+
+function atualizarInterface(valor) {
+  document.getElementById("valor").innerText = valor.toFixed(2) + " mg/L";
+  
+  // Atualizar Gráfico
   chart.data.labels.push(new Date().toLocaleTimeString());
-  chart.data.datasets[0].data.push(concentracao);
+  chart.data.datasets[0].data.push(valor);
   if (chart.data.labels.length > 20) {
     chart.data.labels.shift();
     chart.data.datasets[0].data.shift();
   }
   chart.update();
-}
-</script>
 
+  // Guardar para CSV
+  readings.push({ timestamp: new Date().toISOString(), concentration: valor });
+}
+
+async function salvarNoFirebase(valor) {
+  fetch(`https://biosensor-platform-default-rtdb.europe-west1.firebasedatabase.app/devices/${deviceId}.json`, {
+    method: "PATCH",
+    body: JSON.stringify({ concentration: valor, timestamp: Date.now() })
+  });
+}
+
+function exportCSV() {
+  let csv = "timestamp,concentration_mgL\n";
+  readings.forEach(r => csv += `${r.timestamp},${r.concentration}\n`);
+  const blob = new Blob([csv], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "dados_resorufina.csv";
+  a.click();
+}
+
+function logout() { window.location.href = "login.html"; }
+</script>
 </body>
 </html>
