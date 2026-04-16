@@ -66,7 +66,7 @@ let lastFirebaseUpdate = 0;
 const params = new URLSearchParams(window.location.search);
 const deviceId = params.get("id") || "biosensor_01";
 
-// Configuração do Gráfico
+// 1. CONFIGURAÇÃO DO GRÁFICO (Garante que o ID 'grafico' existe no HTML)
 const ctx = document.getElementById('grafico').getContext('2d');
 const chart = new Chart(ctx, {
   type: 'line',
@@ -77,22 +77,17 @@ const chart = new Chart(ctx, {
       data: [],
       borderColor: '#1f3c88',
       borderWidth: 2,
-      pointRadius: 0, // Remove as bolinhas para ganhar performance
+      pointRadius: 0,
       fill: false,
-      tension: 0.1 // Suavização da linha
+      tension: 0
     }]
   },
   options: {
     responsive: true,
     maintainAspectRatio: false,
-    animation: false, // DESATIVA animações para atualizar instantaneamente
-    parsing: false,   // Melhora performance em tempo real
-    spanGaps: true,
+    animation: false,
     scales: {
-      x: {
-        display: true,
-        ticks: { maxRotation: 0, autoSkip: true, maxTicksLimit: 10 }
-      }
+      y: { beginAtZero: true }
     }
   }
 });
@@ -100,6 +95,7 @@ const chart = new Chart(ctx, {
 let readings = [];
 let bleCharacteristic;
 let isMeasuring = false;
+let lastFirebaseUpdate = 0;
 
 /* ================= BLUETOOTH (BLE) ================= */
 const SERVICE_UUID = '12345678-1234-1234-1234-1234567890ab';
@@ -118,12 +114,13 @@ document.getElementById("bleBtn").addEventListener("click", async () => {
     bleCharacteristic.addEventListener('characteristicvaluechanged', handleBLEData);
 
     document.getElementById("estado").innerText = "🔵 Bluetooth Conectado";
-    alert("Conectado ao Sensor de Resorufina!");
+    alert("Conectado!");
   } catch (error) {
     alert("Erro Bluetooth: " + error);
   }
 });
 
+/* ================= PROCESSAMENTO DE DADOS ================= */
 function handleBLEData(event) {
   if (!isMeasuring) return;
 
@@ -131,8 +128,10 @@ function handleBLEData(event) {
   const concentracao = parseFloat(value);
   if (isNaN(concentracao)) return;
 
+  // Atualizar UI
   document.getElementById("valor").innerText = concentracao.toFixed(2) + " mg/L";
   
+  // Atualizar Gráfico
   const agora = new Date().toLocaleTimeString();
   chart.data.labels.push(agora);
   chart.data.datasets[0].data.push(concentracao);
@@ -141,13 +140,12 @@ function handleBLEData(event) {
     chart.data.labels.shift();
     chart.data.datasets[0].data.shift();
   }
-
   chart.update('none'); 
 
-  // Guarda para o CSV (mantém todos os pontos para precisão no ficheiro)
+  // Guardar para CSV
   readings.push({ timestamp: new Date().toISOString(), concentration: concentracao });
 
-  // Salva no Firebase apenas 1 vez por segundo (1000ms) para performance
+  // Firebase (1 vez por segundo)
   const now = Date.now();
   if (now - lastFirebaseUpdate > 1000) {
     salvarNoFirebase(concentracao);
@@ -155,17 +153,15 @@ function handleBLEData(event) {
   }
 }
 
-/* ================= FUNÇÕES DE CONTROLO ================= */
+/* ================= CONTROLOS ================= */
 async function startMeasurement() {
   if (!bleCharacteristic) return alert("Conecte o Bluetooth primeiro!");
   
-  // --- RESET DO GRÁFICO E DADOS ---
-  chart.data.labels = [];              // Limpa os nomes/tempos do eixo X
-  chart.data.datasets[0].data = [];    // Limpa os valores da linha
-  chart.update();                      // Atualiza o canvas para ficar vazio
-  
-  readings = [];                       // Limpa o histórico para o novo CSV
-  // --------------------------------
+  // LIMPAR GRÁFICO E DADOS PARA RECOMECAR
+  chart.data.labels = [];
+  chart.data.datasets[0].data = [];
+  chart.update();
+  readings = []; 
 
   const encoder = new TextEncoder();
   await bleCharacteristic.writeValue(encoder.encode("1"));
@@ -176,28 +172,11 @@ async function startMeasurement() {
 
 async function stopMeasurement() {
   if (!bleCharacteristic) return;
-  
   const encoder = new TextEncoder();
   await bleCharacteristic.writeValue(encoder.encode("0"));
   
   isMeasuring = false;
   document.getElementById("estado").innerText = "⏹ Parado";
-}
-
-function atualizarInterface(valor) {
-  document.getElementById("valor").innerText = valor.toFixed(2) + " mg/L";
-  
-  // Atualizar Gráfico
-  chart.data.labels.push(new Date().toLocaleTimeString());
-  chart.data.datasets[0].data.push(valor);
-  if (chart.data.labels.length > 20) {
-    chart.data.labels.shift();
-    chart.data.datasets[0].data.shift();
-  }
-  chart.update();
-
-  // Guardar para CSV
-  readings.push({ timestamp: new Date().toISOString(), concentration: valor });
 }
 
 async function salvarNoFirebase(valor) {
@@ -208,6 +187,7 @@ async function salvarNoFirebase(valor) {
 }
 
 function exportCSV() {
+  if (readings.length === 0) return alert("Não há dados para exportar.");
   let csv = "timestamp,concentration_mgL\n";
   readings.forEach(r => csv += `${r.timestamp},${r.concentration}\n`);
   const blob = new Blob([csv], { type: "text/csv" });
