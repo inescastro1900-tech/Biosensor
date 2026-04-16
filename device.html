@@ -152,35 +152,25 @@ function logout() {
 /* ================= FIREBASE COMMANDS ================= */
 /* ================= COMANDOS VIA BLE (SEM WIFI) ================= */
 
+let isMeasuring = false; // Estado inicial
+
 async function startMeasurement() {
   if (bleCharacteristic) {
-    try {
-      // Enviamos "1" para ligar o LED
-      const encoder = new TextEncoder();
-      await bleCharacteristic.writeValue(encoder.encode("1"));
-      console.log("Comando START enviado via BLE");
-      alert("Medição iniciada (LED ON)");
-    } catch (error) {
-      console.error("Erro ao enviar START:", error);
-    }
-  } else {
-    alert("Primeiro ligue o Bluetooth!");
+    const encoder = new TextEncoder();
+    await bleCharacteristic.writeValue(encoder.encode("1"));
+    isMeasuring = true; // Ativa a atualização do gráfico
+    document.getElementById("estado").innerText = "🔴 MEDINDO";
+    document.getElementById("estado").className = "alerta";
   }
 }
 
 async function stopMeasurement() {
   if (bleCharacteristic) {
-    try {
-      // Enviamos "0" para desligar o LED
-      const encoder = new TextEncoder();
-      await bleCharacteristic.writeValue(encoder.encode("0"));
-      console.log("Comando STOP enviado via BLE");
-      alert("Medição parada (LED OFF)");
-    } catch (error) {
-      console.error("Erro ao enviar STOP:", error);
-    }
-  } else {
-    alert("Primeiro ligue o Bluetooth!");
+    const encoder = new TextEncoder();
+    await bleCharacteristic.writeValue(encoder.encode("0"));
+    isMeasuring = false; // Pausa a atualização do gráfico
+    document.getElementById("estado").innerText = "⏹ PARADO";
+    document.getElementById("estado").className = "normal";
   }
 }
 
@@ -228,31 +218,22 @@ document.addEventListener("DOMContentLoaded", () => {
 
 /* ================= BLE DATA HANDLING ================= */
 function handleBLEData(event) {
+  if (!isMeasuring) return; // Se estiver parado, ignora os dados!
+
   const value = new TextDecoder().decode(event.target.value);
   const concentracao = parseFloat(value);
-
   if (isNaN(concentracao)) return;
 
-  // Atualiza a UI imediatamente (sem esperar o Firebase)
   document.getElementById("valor").innerText = concentracao.toFixed(2) + " mg/L";
-  
-  // Atualiza o Gráfico em tempo real
+
+  // Atualiza o gráfico apenas se isMeasuring for true
   chart.data.labels.push(new Date().toLocaleTimeString());
   chart.data.datasets[0].data.push(concentracao);
-  if (chart.data.labels.length > 20) { // Mantém apenas os últimos 20 pontos
+  if (chart.data.labels.length > 20) {
     chart.data.labels.shift();
     chart.data.datasets[0].data.shift();
   }
-  chart.update('none'); // 'none' para performance em atualizações rápidas
-
-  // Envia para o Firebase para histórico
-  fetch(`https://biosensor-platform-default-rtdb.europe-west1.firebasedatabase.app/devices/${deviceId}.json`, {
-    method: "PATCH",
-    body: JSON.stringify({
-      concentration: concentracao,
-      timestamp: Date.now()
-    })
-  }).catch(err => console.error("Erro ao salvar no Firebase:", err));
+  chart.update();
 }
 </script>
 
