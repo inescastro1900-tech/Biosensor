@@ -96,6 +96,8 @@ let readings = [];
 
 /* ================= FIREBASE FETCH ================= */
 async function buscarDados() {
+  // Se a medição estiver parada, não vamos buscar lixo ao Firebase
+  if (!isMeasuring) return; 
 
   const response = await fetch(
     `https://biosensor-platform-default-rtdb.europe-west1.firebasedatabase.app/devices/${deviceId}.json`
